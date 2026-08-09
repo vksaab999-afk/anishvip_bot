@@ -1,45 +1,70 @@
 import os
-from http.server import HTTPServer, BaseHTTPRequestHandler
-from threading import Thread
-from telegram import Update
-from telegram.ext import ApplicationBuilder, MessageHandler, ContextTypes, filters
+import asyncio
+import logging
+from motor.motor_asyncio import AsyncIOMotorClient
+from pyrogram import Client, filters
+from pyrogram.types import Message
 
-# Render Port Keep-Alive Web Server
-class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
-    def do_GET(self):
-        self.send_response(200)
-        self.end_headers()
-        self.wfile.write(b"Bot is Running Alive!")
+# Logging setup
+logging.basicConfig(level=logging.INFO)
 
-def run_web_server():
-    port = int(os.environ.get("PORT", 8080))
-    server = HTTPServer(("0.0.0.0", port), SimpleHTTPRequestHandler)
-    server.serve_forever()
-
-# ==================== CONFIGURATION ====================
+# API Credentials (Apna API_ID aur API_HASH yahan check kar lena agar zaroorat ho)
+API_ID = 29949646
+API_HASH = "8e9b4662d55e8250005d54aefcb5168e"
 BOT_TOKEN = "8855627842:AAFMuQjYinyAcDE-bRTy7gw9Tv6VPlqXp1Y"
-# =======================================================
 
-async def get_ids(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if update.message:
-        chat_id = update.effective_chat.id
-        msg_id = update.message.message_id
-        
-        reply_text = (
-            f"✅ **Message ID Extracted!**\n\n"
-            f"🆔 **CHAT_ID:** `{chat_id}`\n"
-            f"📩 **MSG_ID:** `{msg_id}`"
-        )
-        await update.message.reply_text(reply_text, parse_mode="Markdown")
+# Updated MongoDB Connection URI (Authentication fixed)
+MONGO_URI = "mongodb+srv://itsrealvijay1_db_user:vijay@786482@cluster0.91gd3jb.mongodb.net/?appName=Cluster0"
 
-def main():
-    # Background me web server start hoga Render ke liye
-    Thread(target=run_web_server, daemon=True).start()
+# Initialize Pyrogram Bot
+app = Client(
+    "broadcast_bot",
+    api_id=API_ID,
+    api_hash=API_HASH,
+    bot_token=BOT_TOKEN
+)
+
+# Initialize MongoDB Client
+mongo_client = AsyncIOMotorClient(MONGO_URI)
+db = mongo_client["cluster0"]
+users_collection = db["users"]
+
+@app.on_message(filters.command("start"))
+async def start_handler(client: Client, message: Message):
+    user_id = message.from_user.id
+    user_name = message.from_user.first_name
     
-    app = ApplicationBuilder().token(BOT_TOKEN).build()
-    app.add_handler(MessageHandler(filters.ALL, get_ids))
-    print("Bot is active and polling...")
-    app.run_polling()
+    # Check if user already exists in database
+    existing_user = await users_collection.find_one({"user_id": user_id})
+    if not existing_user:
+        await users_collection.insert_one({"user_id": user_id, "name": user_name})
+    
+    await message.reply_text(f"Hello {user_name}! Aapka swagat hai. Database successfully connected hai!")
 
+@app.on_message(filters.command("broadcast") & filters.user(2062534062)) # Apni Admin ID yahan daal lena agar alag ho
+async def broadcast_handler(client: Client, message: Message):
+    if not message.reply_to_message:
+        await message.reply_text("Kripya us message ko reply karein jise broadcast karna hai!")
+        return
+        
+    broadcast_msg = message.reply_to_message
+    users = users_collection.find({})
+    success = 0
+    failed = 0
+    
+    status_msg = await message.reply_text("Broadcast shuru ho gaya hai...")
+    
+    async for user in users:
+        try:
+            await broadcast_msg.copy(chat_id=user["user_id"])
+            success += 1
+            await asyncio.sleep(0.3) # Floodwait se bachne ke liye
+        except Exception:
+            failed += 1
+            
+    await status_msg.edit_text(f"Broadcast poora ho gaya!\n\nSuccess: {success}\nFailed: {failed}")
+
+# Run the bot
 if __name__ == "__main__":
-    main()
+    print("Bot start ho raha hai...")
+    app.run()
