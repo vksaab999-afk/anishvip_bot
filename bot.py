@@ -1,35 +1,44 @@
-import sqlite3
+import os
+from http.server import HTTPServer, BaseHTTPRequestHandler
+from threading import Thread
 from telegram import Update
-from telegram.ext import (
-    ApplicationBuilder,
-    MessageHandler,
-    ContextTypes,
-    filters,
-)
+from telegram.ext import ApplicationBuilder, MessageHandler, ContextTypes, filters
+
+# Render Port Keep-Alive Web Server
+class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b"Bot is Running Alive!")
+
+def run_web_server():
+    port = int(os.environ.get("PORT", 8080))
+    server = HTTPServer(("0.0.0.0", port), SimpleHTTPRequestHandler)
+    server.serve_forever()
 
 # ==================== CONFIGURATION ====================
-BOT_TOKEN = "8855627842:AAFMuQjYinyAcDE-bRTy7gw9Tv6VPlqXp1Y"  # Yahan apna BotFather se mila Token daalein
-ADMIN_ID = 5785924075  # Aapki User ID set kar di hai!
+BOT_TOKEN = "8855627842:AAFMuQjYinyAcDE-bRTy7gw9Tv6VPlqXp1Y"
 # =======================================================
 
 async def get_ids(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # Sirf Admin jab koi bhi message/media bhejega tabhi ID milegi
-    if update.effective_user.id == ADMIN_ID:
+    if update.message:
         chat_id = update.effective_chat.id
         msg_id = update.message.message_id
         
         reply_text = (
-            f"✅ **Message Saved in Bot History!**\n\n"
+            f"✅ **Message ID Extracted!**\n\n"
             f"🆔 **CHAT_ID:** `{chat_id}`\n"
-            f"📩 **MSG_ID:** `{msg_id}`\n\n"
-            f"👉 Is MSG_ID ko yaad rakhna, hum direct welcome message me use karenge!"
+            f"📩 **MSG_ID:** `{msg_id}`"
         )
         await update.message.reply_text(reply_text, parse_mode="Markdown")
 
 def main():
+    # Background me web server start hoga Render ke liye
+    Thread(target=run_web_server, daemon=True).start()
+    
     app = ApplicationBuilder().token(BOT_TOKEN).build()
     app.add_handler(MessageHandler(filters.ALL, get_ids))
-    print("ID Extractor Bot Started...")
+    print("Bot is active and polling...")
     app.run_polling()
 
 if __name__ == "__main__":
