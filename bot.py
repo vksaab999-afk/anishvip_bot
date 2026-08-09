@@ -22,7 +22,7 @@ BOT_TOKEN = "8855627842:AAFMuQjYinyAcDE-bRTy7gw9Tv6VPlqXp1Y"
 ADMIN_CHAT_ID = 5785924075  # Aapki Admin Telegram ID
 
 # MongoDB Atlas URI (Aapka banaya hua link)
-MONGO_URI = "mongodb+srv://itsrealvijay1_db_user:vijay@786482@cluster0.91gd3jb.mongodb.net/?appName=Cluster0"
+MONGO_URI = "MONGO_URI = "mongodb+srv://itsrealvijay1_db_user:vijay786482@cluster0.91gd3jb.mongodb.net/?appName=Cluster0"
 
 # Jis Channel se media copy karna hai uski Chat ID (Jahan aap content rakhoge)
 SOURCE_CHAT_ID = 5785924075  
