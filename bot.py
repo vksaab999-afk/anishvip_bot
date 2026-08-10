@@ -1,45 +1,26 @@
 import os
-from http.server import HTTPServer, BaseHTTPRequestHandler
-from threading import Thread
+import logging
 from telegram import Update
 from telegram.ext import ApplicationBuilder, MessageHandler, ContextTypes, filters
 
-# Render Port Keep-Alive Web Server
-class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
-    def do_GET(self):
-        self.send_response(200)
-        self.end_headers()
-        self.wfile.write(b"Bot is Running Alive!")
+logging.basicConfig(level=logging.INFO)
 
-def run_web_server():
-    port = int(os.environ.get("PORT", 8080))
-    server = HTTPServer(("0.0.0.0", port), SimpleHTTPRequestHandler)
-    server.serve_forever()
+BOT_TOKEN = "APNA_BOT_TOKEN_YAHAN_DALO"
 
-# ==================== CONFIGURATION ====================
-BOT_TOKEN = "8996402477:AAEt8FF2NAnWNrTyIRwGgJJcWEZoJIn2u8c"
-# =======================================================
-
-async def get_ids(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if update.message:
-        chat_id = update.effective_chat.id
-        msg_id = update.message.message_id
-        
-        reply_text = (
-            f"✅ **Message ID Extracted!**\n\n"
-            f"🆔 **CHAT_ID:** `{chat_id}`\n"
-            f"📩 **MSG_ID:** `{msg_id}`"
-        )
-        await update.message.reply_text(reply_text, parse_mode="Markdown")
+async def get_message_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # Yeh function aapke channel ya source chat se aane wale message ki ID seedha Render ke logs me print kar dega
+    msg = update.message or update.channel_post
+    if msg:
+        logging.info(f"--- 🎯 MESSAGE ID MIL GAYI: {msg.message_id} ---")
+        await msg.reply_text(f"Is message ki ID hai: {msg.message_id}")
 
 def main():
-    # Background me web server start hoga Render ke liye
-    Thread(target=run_web_server, daemon=True).start()
+    application = ApplicationBuilder().token(BOT_TOKEN).build()
     
-    app = ApplicationBuilder().token(BOT_TOKEN).build()
-    app.add_handler(MessageHandler(filters.ALL, get_ids))
-    print("Bot is active and polling...")
-    app.run_polling()
+    # Ye sabhi tarah ke messages (Text, Photo, Video, Audio) ko sun kar unki ID logs me de dega
+    application.add_handler(MessageHandler(filters.ALL, get_message_id))
+    
+    application.run_polling()
 
 if __name__ == "__main__":
     main()
