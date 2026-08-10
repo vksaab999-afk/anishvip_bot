@@ -19,12 +19,11 @@ from telegram.ext import (
 logging.basicConfig(level=logging.INFO)
 
 # ==================== CONFIGURATION ====================
-BOT_TOKEN = "8855627842:AAHVYG5n_kcgAMIJW9P2hY7VR34JoSXwr_8"
-ADMIN_CHAT_ID = 6990609012
+BOT_TOKEN = "8855627842:AAHVYG5n_kcgAMIJW9P2hY7VR34JoSXwr_8" 
+ADMIN_CHAT_ID = 5785924075
 
 # MongoDB Atlas URI
 MONGO_URI = "mongodb+srv://itsrealvijay1_db_user:vijay786482@cluster0.91gd3jb.mongodb.net/?appName=Cluster0"
-
 
 # Source Chat & Message IDs
 SOURCE_CHAT_ID = 5785924075
@@ -126,7 +125,7 @@ async def handle_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
             message_id=APK_MSG_ID
         )
 
-# --- BROADCAST LOGIC (DOOSRE MESSAGE YA REPLY PAR BHI KAAM KAREGA) ---
+# --- BROADCAST LOGIC ---
 async def execute_broadcast(message_to_broadcast, context, admin_chat_id):
     users = list(users_collection.find({}, {"user_id": 1}))
     total_users = len(users)
@@ -166,7 +165,7 @@ async def execute_broadcast(message_to_broadcast, context, admin_chat_id):
         parse_mode="Markdown"
     )
 
-# --- 1. DIRECT AUTOMATIC BROADCAST (AGAR BINA COMMAND KE BHEJNA HO) ---
+# --- 1. DIRECT AUTOMATIC BROADCAST ---
 async def auto_broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE):
     msg = update.message
     if update.effective_user.id != ADMIN_CHAT_ID:
@@ -175,17 +174,15 @@ async def auto_broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     await execute_broadcast(msg, context, ADMIN_CHAT_ID)
 
-# --- 2. COMMAND BASED BROADCAST (/broadcast likh kar reply karne par) ---
+# --- 2. COMMAND BASED BROADCAST ---
 async def broadcast_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     msg = update.message
     if update.effective_user.id != ADMIN_CHAT_ID:
         return
 
-    # Agar kisi message par reply karke /broadcast likha hai
     if msg.reply_to_message:
         await execute_broadcast(msg.reply_to_message, context, ADMIN_CHAT_ID)
     else:
-        # Agar text ke sath likha hai jaise "/broadcast Hello"
         text_after_command = msg.text.replace("/broadcast", "").strip()
         if text_after_command:
             users = list(users_collection.find({}, {"user_id": 1}))
@@ -232,5 +229,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
