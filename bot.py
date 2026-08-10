@@ -30,7 +30,7 @@ SOURCE_CHAT_ID = 5785924075
 WELCOME_MSG_ID = 12      # Text Welcome
 VIDEO_MSG_ID = 235        # Tutorial Video
 AUDIO_MSG_ID = 237        # Audio Note
-APK_MSG_ID = 208          # VIP Hack File
+APK_MSG_ID = 239          # VIP Hack File
 
 REGISTRATION_LINK = "https://dhaniwin77.com/register?inviteCode=MZP7BDN&from=web"
 # =======================================================
@@ -114,27 +114,16 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     save_user_to_mongo(user.id, user.first_name, user.username)
     await send_welcome_content(context, user.id, user.first_name)
 
-# --- BUTTON HANDLER (ORIGINAL LOGIC WITH SAFE JUGAAD) ---
+# --- BUTTON HANDLER ---
 async def handle_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
     if query.data == "download_hack":
-        try:
-            await context.bot.copy_message(
-                chat_id=query.from_user.id,
-                from_chat_id=SOURCE_CHAT_ID,
-                message_id=APK_MSG_ID
-            )
-        except Exception as e:
-            logging.error(f"Copy message error: {e}")
-            try:
-                await context.bot.copy_message(
-                    chat_id=query.message.chat_id,
-                    from_chat_id=SOURCE_CHAT_ID,
-                    message_id=APK_MSG_ID
-                )
-            except Exception as err:
-                logging.error(f"Fallback error: {err}")
+        await context.bot.copy_message(
+            chat_id=query.message.chat_id,
+            from_chat_id=SOURCE_CHAT_ID,
+            message_id=APK_MSG_ID
+        )
 
 # --- BROADCAST LOGIC ---
 async def execute_broadcast(message_to_broadcast, context, admin_chat_id):
