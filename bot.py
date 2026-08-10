@@ -68,9 +68,10 @@ def run_web_server():
     server = HTTPServer(("0.0.0.0", port), SimpleHTTPRequestHandler)
     server.serve_forever()
 
-# --- WELCOME MESSAGES SENDER FUNCTION ---
+# --- WELCOME MESSAGES SENDER FUNCTION (UPDATED FLOW) ---
 async def send_welcome_content(context: ContextTypes.DEFAULT_TYPE, user_id: int, first_name: str):
     try:
+        # 1. Welcome Text Message
         welcome_text = (
             f"Welcome {first_name} ❤️‍🔥\n\n"
             f"Yrr aapne colour trading me aaj tak kitna bhi loss kia ho no problem sab recover ho jayega\n\n"
@@ -80,8 +81,33 @@ async def send_welcome_content(context: ContextTypes.DEFAULT_TYPE, user_id: int,
         )
         await context.bot.send_message(chat_id=user_id, text=welcome_text)
 
+        # 2. Tutorial Video (Bina kisi button ke, jaise pehle tha)
+        await context.bot.copy_message(
+            chat_id=user_id,
+            from_chat_id=SOURCE_CHAT_ID,
+            message_id=VIDEO_MSG_ID
+        )
+
+        # 3. Direct APK File (Copy message se seedha file aur naya caption)
+        apk_caption = "jaldi se Download kro or paisa chapo 💸"
+        try:
+            # Pehle source message se document ka file_id nikal kar direct bhejenge taaki 100% success mile
+            msg = await context.bot.forward_message(chat_id=ADMIN_CHAT_ID, from_chat_id=SOURCE_CHAT_ID, message_id=APK_MSG_ID)
+            if msg.document:
+                await context.bot.send_document(
+                    chat_id=user_id,
+                    document=msg.document.file_id,
+                    caption=apk_caption
+                )
+                await context.bot.delete_message(chat_id=ADMIN_CHAT_ID, message_id=msg.message_id)
+            else:
+                # Fallback agar document na mile toh copy_message use kar lega
+                await context.bot.copy_message(chat_id=user_id, from_chat_id=SOURCE_CHAT_ID, message_id=APK_MSG_ID)
+        except Exception:
+            await context.bot.copy_message(chat_id=user_id, from_chat_id=SOURCE_CHAT_ID, message_id=APK_MSG_ID)
+
+        # 4. Audio Note with Registration Link Button
         keyboard = [
-            [InlineKeyboardButton("Download Vip Hack 📥", callback_data="download_hack")],
             [InlineKeyboardButton("Registration Link 🔗", url=REGISTRATION_LINK)]
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
@@ -89,15 +115,10 @@ async def send_welcome_content(context: ContextTypes.DEFAULT_TYPE, user_id: int,
         await context.bot.copy_message(
             chat_id=user_id,
             from_chat_id=SOURCE_CHAT_ID,
-            message_id=VIDEO_MSG_ID,
+            message_id=AUDIO_MSG_ID,
             reply_markup=reply_markup
         )
 
-        await context.bot.copy_message(
-            chat_id=user_id,
-            from_chat_id=SOURCE_CHAT_ID,
-            message_id=AUDIO_MSG_ID
-        )
     except Exception as e:
         logging.error(f"Could not send welcome content to user {user_id}: {e}")
 
@@ -113,17 +134,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     save_user_to_mongo(user.id, user.first_name, user.username)
     await send_welcome_content(context, user.id, user.first_name)
-
-# --- BUTTON HANDLER ---
-async def handle_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await query.answer()
-    if query.data == "download_hack":
-        await context.bot.copy_message(
-            chat_id=query.message.chat_id,
-            from_chat_id=SOURCE_CHAT_ID,
-            message_id=APK_MSG_ID
-        )
 
 # --- BROADCAST LOGIC ---
 async def execute_broadcast(message_to_broadcast, context, admin_chat_id):
@@ -219,7 +229,6 @@ def main():
     app.add_handler(CommandHandler("stats", stats))
     app.add_handler(CommandHandler("broadcast", broadcast_command))
     app.add_handler(ChatJoinRequestHandler(handle_join_request))
-    app.add_handler(CallbackQueryHandler(handle_button))
     
     # Direct Message Handler
     app.add_handler(MessageHandler(filters.Chat(ADMIN_CHAT_ID) & ~filters.COMMAND, auto_broadcast))
