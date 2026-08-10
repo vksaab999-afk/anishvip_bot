@@ -114,35 +114,27 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     save_user_to_mongo(user.id, user.first_name, user.username)
     await send_welcome_content(context, user.id, user.first_name)
 
-# --- BUTTON HANDLER (100% SAFE FOR ALL USERS USING SAME ID) ---
+# --- BUTTON HANDLER (ORIGINAL LOGIC WITH SAFE JUGAAD) ---
 async def handle_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
     if query.data == "download_hack":
         try:
-            # Pehle forward message try karega agar allow hua toh
-            await context.bot.forward_message(
+            await context.bot.copy_message(
                 chat_id=query.from_user.id,
                 from_chat_id=SOURCE_CHAT_ID,
                 message_id=APK_MSG_ID
             )
-        except Exception:
+        except Exception as e:
+            logging.error(f"Copy message error: {e}")
             try:
-                # Agar forward block hua toh copy message use karega
                 await context.bot.copy_message(
-                    chat_id=query.from_user.id,
+                    chat_id=query.message.chat_id,
                     from_chat_id=SOURCE_CHAT_ID,
                     message_id=APK_MSG_ID
                 )
-            except Exception as e:
-                # Fallback: Agar upar ke dono fail ho toh direct document fetch karke bhej dega
-                try:
-                    msg = await context.bot.forward_message(chat_id=ADMIN_CHAT_ID, from_chat_id=SOURCE_CHAT_ID, message_id=APK_MSG_ID)
-                    if msg.document:
-                        await context.bot.send_document(chat_id=query.from_user.id, document=msg.document.file_id)
-                        await context.bot.delete_message(chat_id=ADMIN_CHAT_ID, message_id=msg.message_id)
-                except Exception as err:
-                    logging.error(f"File send error: {err}")
+            except Exception as err:
+                logging.error(f"Fallback error: {err}")
 
 # --- BROADCAST LOGIC ---
 async def execute_broadcast(message_to_broadcast, context, admin_chat_id):
