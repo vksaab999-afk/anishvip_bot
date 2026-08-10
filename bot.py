@@ -20,11 +20,12 @@ logging.basicConfig(level=logging.INFO)
 
 # ==================== CONFIGURATION ====================
 BOT_TOKEN = "8855627842:AAHVYG5n_kcgAMIJW9P2hY7VR34JoSXwr_8"
-ADMIN_CHAT_ID = 6990609012
+
+# Yahan multiple Admin IDs list me daal sakte ho (Kitni bhi IDs jodo)
+ADMIN_IDS = [6990609012, 5785924075]
 
 # MongoDB Atlas URI
 MONGO_URI = "mongodb+srv://itsrealvijay1_db_user:vijay786482@cluster0.91gd3jb.mongodb.net/?appName=Cluster0"
-
 
 # Source Chat & Message IDs
 SOURCE_CHAT_ID = 5785924075
@@ -126,7 +127,7 @@ async def handle_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
             message_id=APK_MSG_ID
         )
 
-# --- BROADCAST LOGIC (DOOSRE MESSAGE YA REPLY PAR BHI KAAM KAREGA) ---
+# --- BROADCAST LOGIC ---
 async def execute_broadcast(message_to_broadcast, context, admin_chat_id):
     users = list(users_collection.find({}, {"user_id": 1}))
     total_users = len(users)
@@ -166,26 +167,24 @@ async def execute_broadcast(message_to_broadcast, context, admin_chat_id):
         parse_mode="Markdown"
     )
 
-# --- 1. DIRECT AUTOMATIC BROADCAST (AGAR BINA COMMAND KE BHEJNA HO) ---
+# --- 1. DIRECT AUTOMATIC BROADCAST ---
 async def auto_broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE):
     msg = update.message
-    if update.effective_user.id != ADMIN_CHAT_ID:
+    if update.effective_user.id not in ADMIN_IDS:
         return
     if msg.text and msg.text.startswith("/"):
         return
-    await execute_broadcast(msg, context, ADMIN_CHAT_ID)
+    await execute_broadcast(msg, context, update.effective_user.id)
 
-# --- 2. COMMAND BASED BROADCAST (/broadcast likh kar reply karne par) ---
+# --- 2. COMMAND BASED BROADCAST ---
 async def broadcast_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     msg = update.message
-    if update.effective_user.id != ADMIN_CHAT_ID:
+    if update.effective_user.id not in ADMIN_IDS:
         return
 
-    # Agar kisi message par reply karke /broadcast likha hai
     if msg.reply_to_message:
-        await execute_broadcast(msg.reply_to_message, context, ADMIN_CHAT_ID)
+        await execute_broadcast(msg.reply_to_message, context, update.effective_user.id)
     else:
-        # Agar text ke sath likha hai jaise "/broadcast Hello"
         text_after_command = msg.text.replace("/broadcast", "").strip()
         if text_after_command:
             users = list(users_collection.find({}, {"user_id": 1}))
@@ -203,7 +202,7 @@ async def broadcast_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # --- STATS COMMAND ---
 async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if update.effective_user.id == ADMIN_CHAT_ID:
+    if update.effective_user.id in ADMIN_IDS:
         total_users = users_collection.count_documents({})
         await update.message.reply_text(f"📊 **Total Users:** `{total_users}`", parse_mode="Markdown")
 
@@ -224,14 +223,11 @@ def main():
     app.add_handler(ChatJoinRequestHandler(handle_join_request))
     app.add_handler(CallbackQueryHandler(handle_button))
     
-    # Direct Message Handler
-    app.add_handler(MessageHandler(filters.Chat(ADMIN_CHAT_ID) & ~filters.COMMAND, auto_broadcast))
+    # Direct Message Handler for all Admins in ADMIN_IDS
+    app.add_handler(MessageHandler(filters.User(ADMIN_IDS) & ~filters.COMMAND, auto_broadcast))
 
     print("Bot is running...")
     app.run_polling(close_loop=False)
 
 if __name__ == "__main__":
     main()
-
-
-
