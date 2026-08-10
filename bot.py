@@ -30,7 +30,7 @@ SOURCE_CHAT_ID = 5785924075
 WELCOME_MSG_ID = 12      # Text Welcome
 VIDEO_MSG_ID = 235        # Tutorial Video
 AUDIO_MSG_ID = 237        # Audio Note
-APK_MSG_ID = 239          # VIP Hack File
+APK_MSG_ID = 208          # VIP Hack File
 
 REGISTRATION_LINK = "https://dhaniwin77.com/register?inviteCode=MZP7BDN&from=web"
 # =======================================================
