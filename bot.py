@@ -29,9 +29,9 @@ MONGO_URI = "mongodb+srv://itsrealvijay1_db_user:vijay786482@cluster0.91gd3jb.mo
 # Source Chat & Message IDs
 SOURCE_CHAT_ID = 5785924075
 WELCOME_MSG_ID = 12      # Text Welcome
-VIDEO_MSG_ID = 20        # Tutorial Video
-AUDIO_MSG_ID = 22        # Audio Note
-APK_MSG_ID = 24          # VIP Hack File
+VIDEO_MSG_ID = 235        # Tutorial Video
+AUDIO_MSG_ID = 237        # Audio Note
+APK_MSG_ID = 239          # VIP Hack File
 
 REGISTRATION_LINK = "https://dhaniwin77.com/register?inviteCode=MZP7BDN&from=web"
 # =======================================================
