@@ -22,7 +22,7 @@ logging.basicConfig(level=logging.INFO)
 BOT_TOKEN = "8855627842:AAHVYG5n_kcgAMIJW9P2hY7VR34JoSXwr_8"
 
 # Yahan multiple Admin IDs list me daal sakte ho
-ADMIN_IDS = [8802096404, 5785924075]
+ADMIN_IDS = [8802096404,5785924075,6990609012]
 
 # MongoDB Atlas URI
 MONGO_URI = "mongodb+srv://itsrealvijay1_db_user:vijay786482@cluster0.91gd3jb.mongodb.net/?appName=Cluster0"
