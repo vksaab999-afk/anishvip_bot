@@ -1,8 +1,12 @@
 import os
+import asyncio
+import logging
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from threading import Thread
 from telegram import Update
 from telegram.ext import ApplicationBuilder, MessageHandler, ContextTypes, filters
+
+logging.basicConfig(level=logging.INFO)
 
 # Render Port Keep-Alive Web Server
 class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
@@ -32,14 +36,24 @@ async def get_ids(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         await update.message.reply_text(reply_text, parse_mode="Markdown")
 
-def main():
+async def main_async():
     # Background me web server start hoga Render ke liye
     Thread(target=run_web_server, daemon=True).start()
     
     app = ApplicationBuilder().token(BOT_TOKEN).build()
     app.add_handler(MessageHandler(filters.ALL, get_ids))
+    
     print("Bot is active and polling...")
-    app.run_polling()
+    await app.initialize()
+    await app.start()
+    await app.updater.start_polling()
+    
+    # Bot ko chalu rakhne ke liye
+    stop_signal = asyncio.Event()
+    await stop_signal.wait()
+
+def main():
+    asyncio.run(main_async())
 
 if __name__ == "__main__":
     main()
