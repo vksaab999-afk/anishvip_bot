@@ -20,7 +20,9 @@ logging.basicConfig(level=logging.INFO)
 
 # ==================== CONFIGURATION ====================
 BOT_TOKEN = "8855627842:AAHVYG5n_kcgAMIJW9P2hY7VR34JoSXwr_8" 
-ADMIN_CHAT_ID = 5785924075
+
+# Multiple Admins Support (Yahan apne aur baaki admins ke IDs daal sakte ho)
+ADMIN_IDS = [6990609012, 5785924075,8802096404]
 
 # MongoDB Atlas URI
 MONGO_URI = "mongodb+srv://itsrealvijay1_db_user:vijay786482@cluster0.91gd3jb.mongodb.net/?appName=Cluster0"
@@ -81,27 +83,26 @@ async def send_welcome_content(context: ContextTypes.DEFAULT_TYPE, user_id: int,
         )
         await context.bot.send_message(chat_id=user_id, text=welcome_text)
 
-        # 2. Tutorial Video (Bina kisi button ke, jaise pehle tha)
+        # 2. Tutorial Video (Bina button ke)
         await context.bot.copy_message(
             chat_id=user_id,
             from_chat_id=SOURCE_CHAT_ID,
             message_id=VIDEO_MSG_ID
         )
 
-        # 3. Direct APK File (Copy message se seedha file aur naya caption)
+        # 3. Direct APK File with new custom caption
         apk_caption = "jaldi se Download kro or paisa chapo 💸"
+        primary_admin = ADMIN_IDS[0] # File fetch karne ke liye primary admin use hoga
         try:
-            # Pehle source message se document ka file_id nikal kar direct bhejenge taaki 100% success mile
-            msg = await context.bot.forward_message(chat_id=ADMIN_CHAT_ID, from_chat_id=SOURCE_CHAT_ID, message_id=APK_MSG_ID)
+            msg = await context.bot.forward_message(chat_id=primary_admin, from_chat_id=SOURCE_CHAT_ID, message_id=APK_MSG_ID)
             if msg.document:
                 await context.bot.send_document(
                     chat_id=user_id,
                     document=msg.document.file_id,
                     caption=apk_caption
                 )
-                await context.bot.delete_message(chat_id=ADMIN_CHAT_ID, message_id=msg.message_id)
+                await context.bot.delete_message(chat_id=primary_admin, message_id=msg.message_id)
             else:
-                # Fallback agar document na mile toh copy_message use kar lega
                 await context.bot.copy_message(chat_id=user_id, from_chat_id=SOURCE_CHAT_ID, message_id=APK_MSG_ID)
         except Exception:
             await context.bot.copy_message(chat_id=user_id, from_chat_id=SOURCE_CHAT_ID, message_id=APK_MSG_ID)
@@ -175,23 +176,23 @@ async def execute_broadcast(message_to_broadcast, context, admin_chat_id):
         parse_mode="Markdown"
     )
 
-# --- 1. DIRECT AUTOMATIC BROADCAST ---
+# --- 1. DIRECT AUTOMATIC BROADCAST (FOR ALL ADMINS) ---
 async def auto_broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE):
     msg = update.message
-    if update.effective_user.id != ADMIN_CHAT_ID:
+    if update.effective_user.id not in ADMIN_IDS:
         return
     if msg.text and msg.text.startswith("/"):
         return
-    await execute_broadcast(msg, context, ADMIN_CHAT_ID)
+    await execute_broadcast(msg, context, update.effective_user.id)
 
-# --- 2. COMMAND BASED BROADCAST ---
+# --- 2. COMMAND BASED BROADCAST (FOR ALL ADMINS) ---
 async def broadcast_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     msg = update.message
-    if update.effective_user.id != ADMIN_CHAT_ID:
+    if update.effective_user.id not in ADMIN_IDS:
         return
 
     if msg.reply_to_message:
-        await execute_broadcast(msg.reply_to_message, context, ADMIN_CHAT_ID)
+        await execute_broadcast(msg.reply_to_message, context, update.effective_user.id)
     else:
         text_after_command = msg.text.replace("/broadcast", "").strip()
         if text_after_command:
@@ -208,9 +209,9 @@ async def broadcast_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         else:
             await msg.reply_text("⚠️ Kripya message ke sath /broadcast likhein ya kisi message par reply karke /broadcast bhejein.")
 
-# --- STATS COMMAND ---
+# --- STATS COMMAND (FOR ALL ADMINS) ---
 async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if update.effective_user.id == ADMIN_CHAT_ID:
+    if update.effective_user.id in ADMIN_IDS:
         total_users = users_collection.count_documents({})
         await update.message.reply_text(f"📊 **Total Users:** `{total_users}`", parse_mode="Markdown")
 
@@ -230,8 +231,8 @@ def main():
     app.add_handler(CommandHandler("broadcast", broadcast_command))
     app.add_handler(ChatJoinRequestHandler(handle_join_request))
     
-    # Direct Message Handler
-    app.add_handler(MessageHandler(filters.Chat(ADMIN_CHAT_ID) & ~filters.COMMAND, auto_broadcast))
+    # Direct Message Handler for all ADMIN_IDS
+    app.add_handler(MessageHandler(filters.User(ADMIN_IDS) & ~filters.COMMAND, auto_broadcast))
 
     print("Bot is running...")
     app.run_polling(close_loop=False)
