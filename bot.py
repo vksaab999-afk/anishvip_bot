@@ -27,7 +27,7 @@ MONGO_URI = "mongodb+srv://itsrealvijay1_db_user:vijay786482@cluster0.91gd3jb.mo
 
 
 # Source Chat & Message IDs
-SOURCE_CHAT_ID = 5785924075,6990609012
+SOURCE_CHAT_ID = 5785924075
 WELCOME_MSG_ID = 12      # Text Welcome
 VIDEO_MSG_ID = 235        # Tutorial Video
 AUDIO_MSG_ID = 237        # Audio Note
