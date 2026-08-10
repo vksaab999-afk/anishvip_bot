@@ -18,17 +18,15 @@ from telegram.ext import (
 logging.basicConfig(level=logging.INFO)
 
 # ==================== CONFIGURATION ====================
-BOT_TOKEN = "8855627842:AAFMuQjYinyAcDE-bRTy7gw9Tv6VPlqXp1Y" 
+BOT_TOKEN = "8855627842:AAFMuQjYinyAcDE-bRTy7gw9Tv6VPlqXp1Y"
 ADMIN_CHAT_ID = 5785924075  # Aapki Admin Telegram ID
 
-# MongoDB Atlas URI (Aapka banaya hua link)
 MONGO_URI = "mongodb+srv://itsrealvijay1_db_user:vijay786482@cluster0.91gd3jb.mongodb.net/?appName=Cluster0"
 
-# Jis Channel se media copy karna hai uski Chat ID (Jahan aap content rakhoge)
 SOURCE_CHAT_ID = 5785924075  
-WELCOME_MSG_ID = 12      # Text Welcome Message ID
-VIDEO_MSG_ID = 20        # Tutorial Video Message ID
-AUDIO_MSG_ID = 22        # Audio Note Message ID
+WELCOME_MSG_ID = 31      
+VIDEO_MSG_ID = 33        
+AUDIO_MSG_ID = 35        
 
 REGISTRATION_LINK = "https://dhaniwin77.com/register?inviteCode=MZP7BDN&from=web"
 # =======================================================
@@ -54,7 +52,7 @@ def save_user_to_mongo(user_id, first_name, username):
     except Exception as e:
         logging.error(f"MongoDB Error: {e}")
 
-# --- KEEP-ALIVE WEB SERVER (24x7 Uptime) ---
+# --- KEEP-ALIVE WEB SERVER ---
 class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
@@ -66,7 +64,7 @@ def run_web_server():
     server = HTTPServer(("0.0.0.0", port), SimpleHTTPRequestHandler)
     server.serve_forever()
 
-# --- WELCOME CONTENT SENDER FUNCTION ---
+# --- WELCOME CONTENT SENDER ---
 async def send_welcome_content(context: ContextTypes.DEFAULT_TYPE, user_id: int, first_name: str):
     try:
         welcome_text = (
@@ -84,7 +82,6 @@ async def send_welcome_content(context: ContextTypes.DEFAULT_TYPE, user_id: int,
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
 
-        # Video Message Copy
         sent_msg = await context.bot.copy_message(
             chat_id=user_id,
             from_chat_id=SOURCE_CHAT_ID,
@@ -92,7 +89,6 @@ async def send_welcome_content(context: ContextTypes.DEFAULT_TYPE, user_id: int,
             reply_markup=reply_markup
         )
 
-        # Pin Video Message
         try:
             if sent_msg and hasattr(sent_msg, 'message_id'):
                 await context.bot.pin_chat_message(
@@ -102,7 +98,6 @@ async def send_welcome_content(context: ContextTypes.DEFAULT_TYPE, user_id: int,
         except Exception as pin_err:
             logging.error(f"Pin error: {pin_err}")
 
-        # Audio Message Copy
         await context.bot.copy_message(
             chat_id=user_id,
             from_chat_id=SOURCE_CHAT_ID,
@@ -111,35 +106,31 @@ async def send_welcome_content(context: ContextTypes.DEFAULT_TYPE, user_id: int,
     except Exception as e:
         logging.error(f"Could not send welcome content to user {user_id}: {e}")
 
-# --- JOIN REQUEST HANDLER (Works for Any Channel where bot is Admin) ---
+# --- JOIN REQUEST HANDLER (Auto-Approve Removed) ---
 async def handle_join_request(update: Update, context: ContextTypes.DEFAULT_TYPE):
     request = update.chat_join_request
     user = request.from_user
     
+    # User ko database me save karega aur welcome message bhejega
     save_user_to_mongo(user.id, user.first_name, user.username)
     await send_welcome_content(context, user.id, user.first_name)
     
-    try:
-        await request.approve()
-    except Exception:
-        pass
+    # NOTE: Request approve (request.approve()) yahan se hata di gayi hai, 
+    # ab aap ise manually approve karenge.
 
 # --- ADMIN STATS COMMAND ---
 async def stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = update.effective_user.id
-    if user_id != ADMIN_CHAT_ID:
+    if update.effective_user.id != ADMIN_CHAT_ID:
         return
     
     total_users = users_collection.count_documents({})
     await update.message.reply_text(f"📊 **Bot Statistics:**\n\nTotal Users in Database: `{total_users}`", parse_mode="Markdown")
 
-# --- UNIVERSAL BROADCAST SYSTEM FOR ADMIN ---
+# --- UNIVERSAL BROADCAST SYSTEM ---
 async def admin_broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = update.effective_user.id
-    if user_id != ADMIN_CHAT_ID:
+    if update.effective_user.id != ADMIN_CHAT_ID:
         return
 
-    # Agar admin ne koi command bheji hai (jaise /stats), toh broadcast mat karo
     if update.message.text and update.message.text.startswith("/"):
         return
 
@@ -150,14 +141,13 @@ async def admin_broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE):
     for user in all_users:
         target_id = user["user_id"]
         try:
-            # Admin jo bhi bhejega (Photo, Video, Text, Audio, Document), wo sab copy ho jayega
             await context.bot.copy_message(
                 chat_id=target_id,
                 from_chat_id=ADMIN_CHAT_ID,
                 message_id=update.message.message_id
             )
             success_count += 1
-            await asyncio.sleep(0.05)  # Telegram flood limit bachane ke liye chota gap
+            await asyncio.sleep(0.05) 
         except Exception:
             fail_count += 1
 
@@ -165,17 +155,15 @@ async def admin_broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # --- MAIN FUNCTION ---
 def main():
-    # Start Keep-Alive Server in Background
     server_thread = Thread(target=run_web_server)
     server_thread.daemon = True
     server_thread.start()
 
     application = ApplicationBuilder().token(BOT_TOKEN).build()
 
-    # Handlers
     application.add_handler(ChatJoinRequestHandler(handle_join_request))
     application.add_handler(CommandHandler("stats", stats_command))
-    application.add_handler(MessageHandler(filters.Chat(ADMIN_CHAT_ID) & ~filters.COMMAND, admin_broadcast))
+    application.add_handler(MessageHandler(filters.ALL & ~filters.COMMAND, admin_broadcast))
 
     logging.info("Bot is starting with 24x7 Web Server...")
     application.run_polling(allowed_updates=Update.ALL_TYPES)
