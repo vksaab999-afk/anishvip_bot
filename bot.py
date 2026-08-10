@@ -20,7 +20,7 @@ logging.basicConfig(level=logging.INFO)
 
 # ==================== CONFIGURATION ====================
 BOT_TOKEN = "8855627842:AAHVYG5n_kcgAMIJW9P2hY7VR34JoSXwr_8"
-ADMIN_CHAT_ID = 5785924075
+ADMIN_CHAT_ID = 5785924075,6990609012
 
 # MongoDB Atlas URI
 MONGO_URI = "mongodb+srv://itsrealvijay1_db_user:vijay786482@cluster0.91gd3jb.mongodb.net/?appName=Cluster0"
