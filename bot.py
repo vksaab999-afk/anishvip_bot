@@ -21,8 +21,8 @@ logging.basicConfig(level=logging.INFO)
 # ==================== CONFIGURATION ====================
 BOT_TOKEN = "8855627842:AAHVYG5n_kcgAMIJW9P2hY7VR34JoSXwr_8"
 
-# Yahan multiple Admin IDs list me daal sakte ho (Kitni bhi IDs jodo)
-ADMIN_IDS = [6990609012, 5785924075,8802096404]
+# Yahan multiple Admin IDs list me daal sakte ho
+ADMIN_IDS = [8802096404, 5785924075]
 
 # MongoDB Atlas URI
 MONGO_URI = "mongodb+srv://itsrealvijay1_db_user:vijay786482@cluster0.91gd3jb.mongodb.net/?appName=Cluster0"
@@ -122,7 +122,7 @@ async def handle_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
     if query.data == "download_hack":
         await context.bot.copy_message(
-            chat_id=query.message.chat_id,
+            chat_id=query.from_user.id,
             from_chat_id=SOURCE_CHAT_ID,
             message_id=APK_MSG_ID
         )
