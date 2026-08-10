@@ -20,12 +20,11 @@ logging.basicConfig(level=logging.INFO)
 
 # ==================== CONFIGURATION ====================
 BOT_TOKEN = "8855627842:AAHVYG5n_kcgAMIJW9P2hY7VR34JoSXwr_8"
-
-# Multiple Admin IDs
-ADMIN_IDS = [6990609012, 5785924075,8802096404]
+ADMIN_IDS = [6990609012, 5785924075]
 
 # MongoDB Atlas URI
 MONGO_URI = "mongodb+srv://itsrealvijay1_db_user:vijay786482@cluster0.91gd3jb.mongodb.net/?appName=Cluster0"
+
 
 # Source Chat & Message IDs
 SOURCE_CHAT_ID = 5785924075
@@ -116,7 +115,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     save_user_to_mongo(user.id, user.first_name, user.username)
     await send_welcome_content(context, user.id, user.first_name)
 
-# --- BUTTON HANDLER ---
+# --- BUTTON HANDLER (FIXED) ---
 async def handle_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -223,7 +222,7 @@ def main():
     app.add_handler(ChatJoinRequestHandler(handle_join_request))
     app.add_handler(CallbackQueryHandler(handle_button))
     
-    # Direct Message Handler for all Admins in ADMIN_IDS
+    # Direct Message Handler
     app.add_handler(MessageHandler(filters.User(ADMIN_IDS) & ~filters.COMMAND, auto_broadcast))
 
     print("Bot is running...")
