@@ -57,13 +57,21 @@ def save_user_to_mongo(user_id, first_name, username):
     except Exception as e:
         logging.error(f"MongoDB Error: {e}")
 
-# --- KEEP-ALIVE WEB SERVER (Exact working bot match) ---
+# --- KEEP-ALIVE WEB SERVER (Fixed for UptimeRobot) ---
 class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
         self.send_header("Content-type", "text/html")
         self.end_headers()
         self.wfile.write(bytes("<html><body><h1>Bot is Live and MongoDB Connected!</h1></body></html>", "utf-8"))
+
+    def do_HEAD(self):
+        self.send_response(200)
+        self.send_header("Content-type", "text/html")
+        self.end_headers()
+    
+    def log_message(self, format, *args):
+        return
     
     def log_message(self, format, *args):
         return  # Yeh line server ke logs ko clean rakhegi taaki faltu print na ho
