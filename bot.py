@@ -20,7 +20,7 @@ logging.basicConfig(level=logging.INFO)
 # ==================== CONFIGURATION ====================
 BOT_TOKEN = "8855627842:AAHVYG5n_kcgAMIJW9P2hY7VR34JoSXwr_8" 
 
-# Multiple Admins Support
+# Multiple Admins Support (All 3 Admins)
 ADMIN_IDS = [6990609012, 5785924075, 8802096404]
 
 # MongoDB Atlas URI
@@ -57,16 +57,12 @@ def save_user_to_mongo(user_id, first_name, username):
     except Exception as e:
         logging.error(f"MongoDB Error: {e}")
 
-# --- SUPER FAST KEEP-ALIVE WEB SERVER ---
+# --- KEEP-ALIVE WEB SERVER (Exact working setup) ---
 class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
-        self.send_header("Content-type", "text/plain")
         self.end_headers()
-        self.wfile.write(b"Bot is Active and Running Smoothly!")
-    
-    def log_message(self, format, *args):
-        return
+        self.wfile.write(b"Bot is Live and MongoDB Connected!")
 
 def run_web_server():
     port = int(os.environ.get("PORT", 8080))
@@ -215,13 +211,8 @@ async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(f"📊 **Total Users:** `{total_users}`", parse_mode="Markdown")
 
 def main():
+    # Exactly same working keep-alive web server thread starter
     Thread(target=run_web_server, daemon=True).start()
-
-    try:
-        loop = asyncio.get_event_loop()
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
 
     app = ApplicationBuilder().token(BOT_TOKEN).build()
 
@@ -233,7 +224,7 @@ def main():
     app.add_handler(MessageHandler(filters.User(ADMIN_IDS) & ~filters.COMMAND, auto_broadcast))
 
     print("Bot is running...")
-    app.run_polling(close_loop=False)
+    app.run_polling()
 
 if __name__ == "__main__":
     main()
