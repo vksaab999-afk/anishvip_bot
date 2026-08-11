@@ -57,7 +57,7 @@ def save_user_to_mongo(user_id, first_name, username):
     except Exception as e:
         logging.error(f"MongoDB Error: {e}")
 
-# --- KEEP-ALIVE WEB SERVER ---
+# --- KEEP-ALIVE WEB SERVER (Exact working bot match) ---
 class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
@@ -229,7 +229,7 @@ def main():
     app.add_handler(MessageHandler(filters.User(ADMIN_IDS) & ~filters.COMMAND, auto_broadcast))
 
     print("Bot is running...")
-    app.run_polling(close_loop=False)
+    app.run_polling()
 
 if __name__ == "__main__":
     main()
