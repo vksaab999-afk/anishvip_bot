@@ -20,7 +20,7 @@ logging.basicConfig(level=logging.INFO)
 # ==================== CONFIGURATION ====================
 BOT_TOKEN = "8855627842:AAHVYG5n_kcgAMIJW9P2hY7VR34JoSXwr_8" 
 
-# Multiple Admins Support (Updated with all 3 Admin IDs)
+# Multiple Admins Support
 ADMIN_IDS = [6990609012, 5785924075, 8802096404]
 
 # MongoDB Atlas URI
@@ -217,6 +217,12 @@ async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
 def main():
     Thread(target=run_web_server, daemon=True).start()
 
+    try:
+        loop = asyncio.get_event_loop()
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+
     app = ApplicationBuilder().token(BOT_TOKEN).build()
 
     app.add_handler(CommandHandler("start", start))
@@ -227,7 +233,7 @@ def main():
     app.add_handler(MessageHandler(filters.User(ADMIN_IDS) & ~filters.COMMAND, auto_broadcast))
 
     print("Bot is running...")
-    app.run_polling()
+    app.run_polling(close_loop=False)
 
 if __name__ == "__main__":
     main()
