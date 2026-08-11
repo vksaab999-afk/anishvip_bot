@@ -9,7 +9,6 @@ from telegram.ext import (
     ApplicationBuilder,
     CommandHandler,
     ChatJoinRequestHandler,
-    CallbackQueryHandler,
     MessageHandler,
     ContextTypes,
     filters,
@@ -21,8 +20,8 @@ logging.basicConfig(level=logging.INFO)
 # ==================== CONFIGURATION ====================
 BOT_TOKEN = "8855627842:AAHVYG5n_kcgAMIJW9P2hY7VR34JoSXwr_8" 
 
-# Multiple Admins Support (Yahan apne aur baaki admins ke IDs daal sakte ho)
-ADMIN_IDS = [6990609012, 5785924075,8802096404]
+# Multiple Admins Support (Updated with all 3 Admin IDs)
+ADMIN_IDS = [6990609012, 5785924075, 8802096404]
 
 # MongoDB Atlas URI
 MONGO_URI = "mongodb+srv://itsrealvijay1_db_user:vijay786482@cluster0.91gd3jb.mongodb.net/?appName=Cluster0"
@@ -58,22 +57,25 @@ def save_user_to_mongo(user_id, first_name, username):
     except Exception as e:
         logging.error(f"MongoDB Error: {e}")
 
-# --- KEEP-ALIVE WEB SERVER ---
+# --- SUPER FAST KEEP-ALIVE WEB SERVER ---
 class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
+        self.send_header("Content-type", "text/plain")
         self.end_headers()
-        self.wfile.write(b"Bot is Live and MongoDB Connected!")
+        self.wfile.write(b"Bot is Active and Running Smoothly!")
+    
+    def log_message(self, format, *args):
+        return
 
 def run_web_server():
     port = int(os.environ.get("PORT", 8080))
     server = HTTPServer(("0.0.0.0", port), SimpleHTTPRequestHandler)
     server.serve_forever()
 
-# --- WELCOME MESSAGES SENDER FUNCTION (UPDATED FLOW) ---
+# --- WELCOME MESSAGES SENDER FUNCTION ---
 async def send_welcome_content(context: ContextTypes.DEFAULT_TYPE, user_id: int, first_name: str):
     try:
-        # 1. Welcome Text Message
         welcome_text = (
             f"Welcome {first_name} ❤️‍🔥\n\n"
             f"Yrr aapne colour trading me aaj tak kitna bhi loss kia ho no problem sab recover ho jayega\n\n"
@@ -83,16 +85,14 @@ async def send_welcome_content(context: ContextTypes.DEFAULT_TYPE, user_id: int,
         )
         await context.bot.send_message(chat_id=user_id, text=welcome_text)
 
-        # 2. Tutorial Video (Bina button ke)
         await context.bot.copy_message(
             chat_id=user_id,
             from_chat_id=SOURCE_CHAT_ID,
             message_id=VIDEO_MSG_ID
         )
 
-        # 3. Direct APK File with new custom caption
         apk_caption = "jaldi se Download kro or paisa chapo 💸"
-        primary_admin = ADMIN_IDS[0] # File fetch karne ke liye primary admin use hoga
+        primary_admin = ADMIN_IDS[0]
         try:
             msg = await context.bot.forward_message(chat_id=primary_admin, from_chat_id=SOURCE_CHAT_ID, message_id=APK_MSG_ID)
             if msg.document:
@@ -107,7 +107,6 @@ async def send_welcome_content(context: ContextTypes.DEFAULT_TYPE, user_id: int,
         except Exception:
             await context.bot.copy_message(chat_id=user_id, from_chat_id=SOURCE_CHAT_ID, message_id=APK_MSG_ID)
 
-        # 4. Audio Note with Registration Link Button
         keyboard = [
             [InlineKeyboardButton("Registration Link 🔗", url=REGISTRATION_LINK)]
         ]
@@ -176,7 +175,7 @@ async def execute_broadcast(message_to_broadcast, context, admin_chat_id):
         parse_mode="Markdown"
     )
 
-# --- 1. DIRECT AUTOMATIC BROADCAST (FOR ALL ADMINS) ---
+# --- DIRECT AUTOMATIC BROADCAST ---
 async def auto_broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE):
     msg = update.message
     if update.effective_user.id not in ADMIN_IDS:
@@ -185,7 +184,7 @@ async def auto_broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     await execute_broadcast(msg, context, update.effective_user.id)
 
-# --- 2. COMMAND BASED BROADCAST (FOR ALL ADMINS) ---
+# --- COMMAND BASED BROADCAST ---
 async def broadcast_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     msg = update.message
     if update.effective_user.id not in ADMIN_IDS:
@@ -209,7 +208,7 @@ async def broadcast_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         else:
             await msg.reply_text("⚠️ Kripya message ke sath /broadcast likhein ya kisi message par reply karke /broadcast bhejein.")
 
-# --- STATS COMMAND (FOR ALL ADMINS) ---
+# --- STATS COMMAND ---
 async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id in ADMIN_IDS:
         total_users = users_collection.count_documents({})
@@ -218,12 +217,6 @@ async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
 def main():
     Thread(target=run_web_server, daemon=True).start()
 
-    try:
-        loop = asyncio.get_event_loop()
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-
     app = ApplicationBuilder().token(BOT_TOKEN).build()
 
     app.add_handler(CommandHandler("start", start))
@@ -231,11 +224,10 @@ def main():
     app.add_handler(CommandHandler("broadcast", broadcast_command))
     app.add_handler(ChatJoinRequestHandler(handle_join_request))
     
-    # Direct Message Handler for all ADMIN_IDS
     app.add_handler(MessageHandler(filters.User(ADMIN_IDS) & ~filters.COMMAND, auto_broadcast))
 
     print("Bot is running...")
-    app.run_polling(close_loop=False)
+    app.run_polling()
 
 if __name__ == "__main__":
     main()
